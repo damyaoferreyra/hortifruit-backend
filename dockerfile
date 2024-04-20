@@ -1,20 +1,16 @@
-FROM adoptopenjdk/openjdk11:alpine
-
-ARG SPRING_PROFILES_ACTIVE=prod
-
-ENV DATABASE_URL=jdbc:postgresql://hortifruits.com:5432/hortifruitdev
-ENV DATABASE_USERNAME=hortifruitdev
-ENV DATABASE_PASSWORD=WMrHQv9Y
-ENV SPRING_PROFILES_ACTIVE=prod
+FROM adoptopenjdk/openjdk11:alpine AS builder
 
 COPY . /opt/hortifruit
 
 WORKDIR /opt/hortifruit
 
-RUN apk add maven
+RUN apk add --no-cache maven && \
+    mvn clean package -Pprod -DskipTests
 
-RUN mvn clean package -Pprod
+FROM adoptopenjdk/openjdk11:alpine
 
-ENTRYPOINT [ "java", "-jar", "/opt/hortifruit/target/hortfruit-online-0.0.1-SNAPSHOT.jar"]
+COPY --from=builder /opt/hortifruit/target/hortfruit-online-0.0.1-SNAPSHOT.jar /opt/hortifruit/hortfruit-online.jar
+
+ENTRYPOINT [ "java", "-jar", "/opt/hortifruit/hortfruit-online.jar"]
 
 EXPOSE 8080
